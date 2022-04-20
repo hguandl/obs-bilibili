@@ -10,7 +10,11 @@ find_package(
              avformat
              swresample)
 
-find_package(CURL REQUIRED)
+find_package(Libcurl REQUIRED)
+
+include_directories(${LIBCURL_INCLUDE_DIRS})
+
+include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 
 add_library(obs-bilibili MODULE)
 add_library(OBS::bilibili ALIAS obs-bilibili)
@@ -23,18 +27,12 @@ target_include_directories(obs-bilibili PRIVATE ${CMAKE_BINARY_DIR}/config)
 
 target_link_libraries(
   obs-bilibili
-  PRIVATE OBS::libobs
-          OBS::media-playback
-          OBS::opts-parser
-          FFmpeg::avcodec
-          FFmpeg::avfilter
-          FFmpeg::avformat
-          FFmpeg::avdevice
-          FFmpeg::avutil
-          FFmpeg::swscale
-          FFmpeg::swresample
-          CURL::libcurl
-          Jansson::Jansson)
+  PRIVATE libobs
+          media-playback
+          opts-parser
+	  ${FFMPEG_LIBRARIES}
+          ${OBS_JANSSON_IMPORT}
+	  ${LIBCURL_LIBRARIES})
 
 set_target_properties(obs-bilibili PROPERTIES FOLDER "plugins" PREFIX
                                                                   "")
@@ -51,4 +49,4 @@ if(OS_WINDOWS)
   target_sources(obs-bilibili PRIVATE obs-bilibili.rc)
 endif()
 
-setup_plugin_target(obs-bilibili)
+install_obs_plugin_with_data(obs-bilibili data)
