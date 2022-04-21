@@ -88,5 +88,206 @@ jobs:
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2.2.0
         with:
-          name: 'obs-bilibili'
+          name: 'obs-bilibili-macos-x86_64'
           path: ./nightly/*
+  ubuntu64:
+    name: 'Linux/Ubuntu 64-bit'
+    runs-on: [ubuntu-18.04]
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: Install prerequisites (Apt)
+        shell: bash
+        run: |
+          echo "NPROC=$(($(nproc)+1))" >> $GITHUB_ENV
+          sudo dpkg --add-architecture amd64
+          sudo apt-get -qq update
+          sudo apt-get install -y \
+           build-essential \
+           checkinstall \
+           cmake \
+           libasound2-dev \
+           libavcodec-dev \
+           libavdevice-dev \
+           libavfilter-dev \
+           libavformat-dev \
+           libavutil-dev \
+           libcurl4-openssl-dev \
+           libfdk-aac-dev \
+           libfontconfig-dev \
+           libfreetype6-dev \
+           libgl1-mesa-dev \
+           libjack-jackd2-dev \
+           libjansson-dev \
+           libluajit-5.1-dev \
+           libpulse-dev \
+           libqt5x11extras5-dev \
+           libsndio-dev \
+           libspeexdsp-dev \
+           libswresample-dev \
+           libswscale-dev \
+           libudev-dev \
+           libv4l-dev \
+           libva-dev \
+           libvlc-dev \
+           libx11-dev \
+           libx264-dev \
+           libxcb-randr0-dev \
+           libxcb-shm0-dev \
+           libxcb-xinerama0-dev \
+           libxcomposite-dev \
+           libxinerama-dev \
+           libmbedtls-dev \
+           pkg-config \
+           python3-dev \
+           qtbase5-dev \
+           qtbase5-private-dev \
+           libqt5svg5-dev \
+           swig \
+           libcmocka-dev \
+           libpci-dev
+      - name: 'Add plugin: obs-bilibili'
+        shell: bash
+        run: |
+          cd ./obs-studio
+          ln -s ../../obs-bilibili plugins/
+          echo "add_subdirectory(plugins/obs-bilibili)" >> CMakeLists.txt
+          cd ..
+      - name: 'Configure'
+        shell: bash
+        run: |
+          mkdir ./build
+          cd ./build
+          cmake -DDISABLE_UI=TRUE -DDISABLE_PLUGINS=TRUE -DENABLE_SCRIPTING=OFF -DDepsPath="/tmp/obsdeps" ../obs-studio
+      - name: 'Build'
+        shell: bash
+        working-directory: ${{ github.workspace }}/build
+        run: make -j${NPROC:-4}
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        shell: bash
+        run: |
+          mkdir ../nightly
+          cp -r ./rundir/RelWithDebInfo/obs-plugins ../nightly/
+          mkdir ../nightly/data
+          cp -r ./rundir/RelWithDebInfo/data/obs-plugins ../nightly/data/
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'obs-bilibili-linux-ubuntu-18.04'
+          path: './nightly/*'
+  win64:
+    name: 'Windows 64-bit'
+    runs-on: [windows-2019]
+    env:
+      QT_VERSION: '5.15.2'
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2022-01-31'
+      WINDOWS_DEPS_CACHE_VERSION: '1'
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.0.2
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Restore pre-built dependencies from cache'
+        id: deps-cache
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'windows-deps-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/deps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}-${{ env.WINDOWS_DEPS_CACHE_VERSION }}
+      - name: 'Install prerequisite: Pre-built dependencies'
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/win-${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
+          7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: 'Add plugin: obs-bilibili'
+        run: |
+          cd .\obs-studio
+          Copy-Item -Path ..\..\obs-bilibili -Destination .\plugins -Recurse
+          Add-Content -Path .\CMakeLists.txt -Value 'add_subdirectory(plugins/obs-bilibili)'
+          cd ..
+      - name: 'Configure'
+        run: |
+          mkdir ./build
+          mkdir ./build64
+          cd ./build64
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DDISABLE_UI=TRUE -DDISABLE_PLUGINS=TRUE -DENABLE_SCRIPTING=OFF -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ../obs-studio
+      - name: 'Build'
+        run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        run: |
+          mkdir ..\nightly
+          Copy-Item -Path .\build64\rundir\RelWithDebInfo\obs-plugins -Destination ..\nightly -Recurse
+          mkdir ..\nightly\data
+          Copy-Item -Path .\build64\rundir\RelWithDebInfo\data\obs-plugins -Destination ..\nightly\data -Recurse
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'obs-win-x64'
+          path: nightly/*
+  win32:
+    name: 'Windows 32-bit'
+    runs-on: [windows-2019]
+    env:
+      QT_VERSION: '5.15.2'
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2022-01-31'
+      WINDOWS_DEPS_CACHE_VERSION: '1'
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.0.2
+      - name: 'Checkout'
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: 'Restore pre-built dependencies from cache'
+        id: deps-cache
+        uses: actions/cache@v2.1.2
+        env:
+          CACHE_NAME: 'deps-cache'
+        with:
+          path: ${{ github.workspace }}/cmbuild/deps
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}-${{ env.WINDOWS_DEPS_CACHE_VERSION }}
+      - name: 'Install prerequisite: Pre-built dependencies'
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/win-${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
+          7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+      - name: 'Add plugin: obs-bilibili'
+        run: |
+          cd .\obs-studio
+          Copy-Item -Path ..\..\obs-bilibili -Destination .\plugins -Recurse
+          Add-Content -Path .\CMakeLists.txt -Value 'add_subdirectory(plugins/obs-bilibili)'
+          cd ..
+      - name: 'Configure'
+        run: |
+          mkdir ./build
+          mkdir ./build32
+          cd ./build32
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DDISABLE_UI=TRUE -DDISABLE_PLUGINS=TRUE -DENABLE_SCRIPTING=OFF -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE ../obs-studio
+      - name: 'Build'
+        run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
+      - name: 'Package'
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        run: |
+          mkdir ..\nightly
+          Copy-Item -Path .\build64\rundir\RelWithDebInfo\obs-plugins -Destination ..\nightly -Recurse
+          mkdir ..\nightly\data
+          Copy-Item -Path .\build64\rundir\RelWithDebInfo\data\obs-plugins -Destination ..\nightly\data -Recurse
+      - name: 'Publish'
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: 'obs-win-x86'
+          path: nightly/*
