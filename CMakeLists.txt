@@ -10,11 +10,9 @@ find_package(
              avformat
              swresample)
 
-find_package(Libcurl REQUIRED)
+find_package(CURL REQUIRED)
 
-include_directories(${LIBCURL_INCLUDE_DIRS})
-
-include_directories(${OBS_JANSSON_INCLUDE_DIRS})
+include_directories(${JANSSON_INCLUDE_DIRS})
 
 add_library(obs-bilibili MODULE)
 add_library(OBS::bilibili ALIAS obs-bilibili)
@@ -31,8 +29,8 @@ target_link_libraries(
           media-playback
           opts-parser
 	  ${FFMPEG_LIBRARIES}
-          ${OBS_JANSSON_IMPORT}
-	  ${LIBCURL_LIBRARIES})
+          ${JANSSON_LIBRARIES}
+	  CURL::libcurl)
 
 set_target_properties(obs-bilibili PROPERTIES FOLDER "plugins" PREFIX
                                                                   "")
