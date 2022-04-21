@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           cd ./obs-studio
-          ln -s ../../obs-bilibili plugins/
+          ln -s ../obs-bilibili plugins/
           echo "add_subdirectory(plugins/obs-bilibili)" >> CMakeLists.txt
           cd ..
       - name: 'Configure'
@@ -152,7 +152,7 @@ jobs:
         shell: bash
         run: |
           cd ./obs-studio
-          ln -s ../../obs-bilibili plugins/
+          ln -s ../obs-bilibili plugins/
           echo "add_subdirectory(plugins/obs-bilibili)" >> CMakeLists.txt
           cd ..
       - name: 'Configure'
@@ -211,7 +211,7 @@ jobs:
       - name: 'Add plugin: obs-bilibili'
         run: |
           cd .\obs-studio
-          Copy-Item -Path ..\..\obs-bilibili -Destination .\plugins -Recurse
+          Copy-Item -Path ..\obs-bilibili -Destination .\plugins -Recurse
           Add-Content -Path .\CMakeLists.txt -Value 'add_subdirectory(plugins/obs-bilibili)'
           cd ..
       - name: 'Configure'
@@ -267,7 +267,7 @@ jobs:
       - name: 'Add plugin: obs-bilibili'
         run: |
           cd .\obs-studio
-          Copy-Item -Path ..\..\obs-bilibili -Destination .\plugins -Recurse
+          Copy-Item -Path ..\obs-bilibili -Destination .\plugins -Recurse
           Add-Content -Path .\CMakeLists.txt -Value 'add_subdirectory(plugins/obs-bilibili)'
           cd ..
       - name: 'Configure'
