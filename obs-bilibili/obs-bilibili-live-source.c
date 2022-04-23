@@ -319,6 +319,11 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 {
 	if (s->input && *s->input) {
 		s->playurl = bilibili_live_source_get_playurl(s->input);
+		if (!s->playurl || !*s->playurl) {
+			blog(LOG_WARNING, "[BILI] Failed to get playurl <%s>", s->input);
+			s->media_valid = false;
+			return;
+		}
 
 		struct mp_media_info info = {
 			.opaque = s,

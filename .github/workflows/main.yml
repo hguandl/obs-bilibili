@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           cd ./obs-studio
-          ln -s ../obs-bilibili plugins/
+          ln -s ../../obs-bilibili plugins/
           echo "add_subdirectory(plugins/obs-bilibili)" >> CMakeLists.txt
           cd ..
       - name: 'Configure'
@@ -152,7 +152,7 @@ jobs:
         shell: bash
         run: |
           cd ./obs-studio
-          ln -s ../obs-bilibili plugins/
+          ln -s ../../obs-bilibili plugins/
           echo "add_subdirectory(plugins/obs-bilibili)" >> CMakeLists.txt
           cd ..
       - name: 'Configure'

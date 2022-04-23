@@ -1,0 +1,22 @@
+diff --git a/libobs/CMakeLists.txt b/libobs/CMakeLists.txt
+index 2f1150b31..937917db7 100644
+--- a/libobs/CMakeLists.txt
++++ b/libobs/CMakeLists.txt
+@@ -99,7 +99,7 @@ if(WIN32)
+ 	string(REGEX REPLACE ".*PATCH_VER[ \t]+([0-9]+).*" "\\1" UI_VERSION_PATCH "${_version_parse}")
+ 	set(UI_VERSION "${UI_VERSION_MAJOR}.${UI_VERSION_MINOR}.${UI_VERSION_PATCH}")
+ 
+-	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in libobs.rc)
++	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/winrc/obs-module.rc.in libobs.rc)
+ 	set(libobs_PLATFORM_SOURCES
+ 		obs-win-crash-handler.c
+ 		obs-windows.c
+@@ -537,7 +537,7 @@ source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
+ source_group("audio-monitoring\\Source Files" FILES ${libobs_audio_monitoring_SOURCES})
+ source_group("audio-monitoring\\Header Files" FILES ${libobs_audio_monitoring_HEADERS})
+ 
+-include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
++include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../deps/libcaption)
+ set(libobs_PLATFORM_DEPS
+ 	${libobs_PLATFORM_DEPS}
+ 	caption)
